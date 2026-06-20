@@ -1,0 +1,9 @@
+google-adk
+google-genai
+fastapi
+uvicorn
+python-dotenv
+apscheduler
+sqlalchemy
+pydantic
+pytest
