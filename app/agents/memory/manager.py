@@ -1,12 +1,3 @@
-"""
-Memory Manager
+from app.services.dashboard_service import MemoryService
 
-Responsibilities
-----------------
-- Session memory
-- Long-term memory
-- Conversation history
-
-Sprint 4:
-Implementation begins.
-"""
+memory_manager = MemoryService()

@@ -1,6 +1,5 @@
-"""
-Base SQLAlchemy model.
+from sqlalchemy.orm import DeclarativeBase
 
-Sprint 10:
-Database models will inherit from this.
-"""
+
+class Base(DeclarativeBase):
+    pass

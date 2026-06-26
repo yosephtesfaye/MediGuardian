@@ -1,17 +1,42 @@
-version: "3.9"
-
 services:
-  mediguardian:
-
-    build: .
-
-    container_name: mediguardian
-
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediguardian-api
     ports:
       - "8000:8000"
-
     env_file:
       - .env
-
     volumes:
-      - .:/app
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: mediguardian-dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+  # Uncomment for production PostgreSQL
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: mediguardian
+  #     POSTGRES_USER: mediguardian
+  #     POSTGRES_PASSWORD: changeme
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   pgdata:
