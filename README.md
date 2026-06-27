@@ -63,6 +63,73 @@
 
 ---
 
+## Detailed System Functionalities
+
+This section describes every core feature and capability of the MediGuardian AI platform, including user-facing interfaces, agent behaviors, and background services.
+
+### 1. Conversational AI Concierge (Multi-Agent System)
+* **Coordinator Agent:** Powered by Google ADK and Gemini 2.5 Flash, the Coordinator serves as the central planner. It analyzes natural language queries, reasons about dependencies, executes tools, and generates user-friendly responses.
+* **Specialist Agent Collaboration:** The system orchestrates explicit, traceable workflows between six specialized agents:
+  * **MedicationAgent:** Manages database records for active/inactive user prescriptions.
+  * **ReminderAgent:** Automatically schedules, updates, and fetches daily reminder times.
+  * **MemoryAgent:** Recalls patient facts, preferences, and allergies to customize interactions.
+  * **CaregiverAgent:** Handles caregiver linking, contact info, and alert distribution.
+  * **AnalyticsAgent:** Tracks dose logging, calculates adherence rates, and compiles stats.
+  * **SafetyAgent:** Enforces medical safety rules and handles refusals.
+* **Collaboration Traces:** When executing complex tasks, specialists consult each other (e.g., `ReminderAgent` fetches active drugs from `MedicationAgent` before creating schedules). Traces of these consult-then-act sequences are stored in `AgentLog` and displayed visually in the frontend.
+
+### 2. Dual-Mode Chat & Offline Resilience
+* **Online Mode (Full AI):** When a `GEMINI_API_KEY` is present, the app utilizes Gemini 2.5 Flash for advanced medical safety checks, sentiment-aware conversation, and semantic memory query matching.
+* **Offline Mode (Deterministic NLU Fallback):** If the Gemini API is unavailable (due to a missing key, authentication failure, or free-tier rate limits/429 errors), the chat system automatically switches to a lightweight, zero-cost NLU engine (`fallback_nlu.py`).
+* **Offline Capabilities:** The fallback NLU utilizes pattern matching and regex parsers to support:
+  * Registering new medications (e.g., *"Register aspirin 100mg at 8am"*)
+  * Listing medications (e.g., *"What meds am I taking?"*)
+  * Logging daily doses (e.g., *"I took my aspirin"*, *"Log my lisinopril as missed"*)
+  * Fetching the next upcoming dose (e.g., *"When is my next dose?"*)
+  * Requesting adherence metrics (e.g., *"How is my adherence?"*)
+  * Adding and listing caregivers (e.g., *"Add caregiver Jane"*)
+* **Auto-Cooldown Recovery:** If a Gemini API call fails with a `429 Too Many Requests` error, the system initiates a 60-second cooldown period, routing all conversations through the offline engine instantly. The UI notifies users with an `[Offline mode]` prefix.
+
+### 3. Medication Scheduling & Active Reminders
+* **CRUD Management:** Offers REST endpoints (`/api/v1/users/{id}/medications`) and chat tools to register, read, update, and delete medications (storing name, dosage, time, frequency, instructions, and duration).
+* **Automated Dose Scheduling:** Upon registering a medication, the system auto-calculates upcoming individual dose reminder entries.
+* **Background Reminder Engine:** Uses `APScheduler` background jobs to check, trigger, and dispatch reminders. It updates statuses and generates logs when notifications are created.
+
+### 4. Patient Adherence Analytics & Heatmap
+* **Dose Status Tracking:** Daily reminders can be logged as `pending`, `taken`, `missed`, or `skipped` through both the chat window and the interactive dashboard.
+* **Adherence Heatmap Calendar:** The React frontend displays a 30-day grid representing adherence intensity. Days are color-coded based on the ratio of completed (taken) doses to total scheduled doses, providing a quick visual assessment of consistency.
+* **PDF & CSV Exporting:** Users can download detailed records. Adherence sheets can be downloaded as standard CSV files or as professional PDF reports compiled with `ReportLab` (listing summary stats, active medications, and logs).
+
+### 5. Gemini Vision OCR Prescription Reader
+* **Prescription Scanning:** Users can upload or snap a picture of a prescription label.
+* **Structured Parsing:** The backend (`/api/v1/ocr/prescription`) routes the image to the Gemini Vision API using a system prompt that mandates JSON output.
+* **Auto-population:** The system extracts the drug name, dosage, frequency, and instructions, displaying them on the UI for quick validation and registration.
+
+### 6. Caregiver Alerts & Family Mode
+* **Multi-Patient Family Linking:** Caregivers can link multiple patient profiles under their user ID via the Family panel, allowing them to monitor schedules and check adherence metrics.
+* **Caregiver Notification Daemon:** If a patient repeatedly misses doses (exceeding custom thresholds), the system triggers caregiver alerts, storing notifications in the database to keep caregivers informed.
+
+### 7. Dual-Embedding Semantic Memory
+* **Semantic Fact Extraction:** If a user shares relevant clinical details during chat (e.g., *"I am allergic to penicillin"*, *"I prefer liquid meds"*), the `MemoryAgent` extracts and stores it.
+* **Cosine Similarity Retrieval:** When compiling prompts for the Coordinator, the system queries stored memory using cosine similarity. It retrieves the top 5 most relevant facts and injects them as system context.
+* **Hybrid Embedding Fallback:** To avoid wasting Gemini API quota on embedding calls, the system supports:
+  * **Primary:** Gemini `text-embedding-004` (768 dimensions) when online.
+  * **Fallback:** A deterministic local 128-dimensional hash vectorizer when offline.
+
+### 8. Clinical Safety Guardrails
+* **Pattern-Based Refusal:** A safety check runs before any LLM or fallback NLU pipeline. It checks user input against patterns related to:
+  * **Medical Diagnosis:** (e.g., *"What disease do I have?"*)
+  * **Prescription Generation:** (e.g., *"Write a prescription for penicillin"*)
+  * **Self-Modification of Dosage:** (e.g., *"Should I double my dosage?"*)
+  * **Medical Emergency:** (e.g., *"I have chest pain"*)
+* **Educational Refusals:** Instead of a generic error, the system returns specific educational refusal scripts written to emphasize patient safety and direct them to emergency services (e.g., 911) or licensed clinical professionals.
+
+### 9. Multi-Modal TTS Voice System
+* **Edge-TTS Backend:** The server supports text-to-speech rendering, generating audio voice files dynamically using the `edge-tts` package.
+* **Browser Voice Synthesis:** The dashboard leverages the Web Speech API, allowing the interface to read reminders and assistant responses aloud.
+
+---
+
 ## Architecture
 
 ```

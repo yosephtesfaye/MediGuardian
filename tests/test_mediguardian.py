@@ -73,3 +73,33 @@ class TestFamily:
         assert r.status_code == 200
         patients = client.get("/api/v1/family/50/patients").json()
         assert any(p["id"] == 51 for p in patients)
+
+
+class TestFallbackNLU:
+    def test_fallback_nlu_flow(self):
+        from app.database.session import SessionLocal
+        from app.services import fallback_nlu
+        db = SessionLocal()
+        try:
+            # Register medication using NLU
+            res = fallback_nlu.handle(db, user_id=1, message="Register aspirin 100mg at 8am")
+            assert res is not None
+            assert "aspirin" in res["response"].lower()
+            
+            # List medications using NLU
+            res = fallback_nlu.handle(db, user_id=1, message="What medications am I taking?")
+            assert res is not None
+            assert "aspirin" in res["response"].lower()
+            
+            # Log dose using NLU
+            res = fallback_nlu.handle(db, user_id=1, message="I took my aspirin")
+            assert res is not None
+            assert "aspirin" in res["response"].lower()
+            
+            # Adherence report using NLU
+            res = fallback_nlu.handle(db, user_id=1, message="How is my adherence?")
+            assert res is not None
+            assert "adherence" in res["response"].lower()
+        finally:
+            db.close()
+

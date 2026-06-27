@@ -32,6 +32,7 @@ from app.services.medication_service import MedicationService
 _medications = MedicationService()
 _caregivers = CaregiverService()
 _preferences = PreferenceService()
+_adherence = AdherenceService()
 
 _DOSAGE_RE = re.compile(
     r"(\d+(?:\.\d+)?\s*(?:mg|mcg|ml|g|iu|units?|tablets?|pills?|caps?|capsules?|drops?|puffs?))",
