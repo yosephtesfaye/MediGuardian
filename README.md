@@ -41,7 +41,7 @@
   <br/><em>Chat showing ReminderAgent → MedicationAgent collaboration trace</em>
 </p>
 
-> **Demo video:** Record using the [3-minute script in docs/evaluation.md](docs/evaluation.md#demo-video-script-3-minutes). Run `python scripts/demo_flow.py` + dashboard at `http://localhost:5173`.
+> **Demo video:** Open [docs/demo_video.html](docs/demo_video.html) in any browser for a full 8-slide animated demo (auto-plays, keyboard-navigable, fullscreen support). Or run `python scripts/demo_flow.py` + dashboard at `http://localhost:5173`.
 
 ---
 

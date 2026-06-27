@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediGuardian AI — Demo Video</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal:#0ef0d0;--teal2:#06b6d4;--navy:#050e1a;--card:rgba(255,255,255,0.045);
+      --border:rgba(14,240,208,0.18);--red:#f43f5e;--amber:#f59e0b;--green:#10b981;
+      --text:#e2e8f0;--muted:#64748b;
+    }
+    body { font-family:'Inter',sans-serif;background:var(--navy);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden; }
+    #topbar { display:flex;align-items:center;justify-content:space-between;padding:10px 28px;background:rgba(5,14,26,0.95);border-bottom:1px solid var(--border);z-index:10; }
+    #topbar .logo { display:flex;align-items:center;gap:10px;font-size:1.1rem;font-weight:700;color:var(--teal); }
+    #topbar .logo svg { width:28px;height:28px; }
+    #topbar .controls { display:flex;gap:10px;align-items:center; }
+    #topbar button { background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 14px;font-size:0.78rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s; }
+    #topbar button:hover { background:rgba(14,240,208,0.12);border-color:var(--teal);color:var(--teal); }
+    #topbar button.active { background:rgba(14,240,208,0.15);border-color:var(--teal);color:var(--teal); }
+    #slide-counter { font-size:0.78rem;color:var(--muted);font-variant-numeric:tabular-nums; }
+    #progress-track { width:100%;height:3px;background:rgba(255,255,255,0.07);position:relative; }
+    #progress-fill { height:100%;background:linear-gradient(90deg,var(--teal2),var(--teal));transition:width 0.4s ease;box-shadow:0 0 12px rgba(14,240,208,0.5); }
+    #stage { flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column; }
+    .slide { position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 32px 16px;opacity:0;transform:translateX(60px);transition:opacity 0.5s ease,transform 0.5s ease;pointer-events:none; }
+    .slide.active { opacity:1;transform:translateX(0);pointer-events:auto; }
+    .slide.exit { opacity:0;transform:translateX(-60px); }
+    .slide-tag { font-size:0.68rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal);margin-bottom:6px; }
+    .slide-title { font-size:1.55rem;font-weight:800;text-align:center;margin-bottom:4px;line-height:1.25; }
+    .slide-subtitle { font-size:0.82rem;color:var(--muted);text-align:center;margin-bottom:16px; }
+    #caption-bar { padding:9px 32px 10px;display:flex;align-items:center;gap:14px;background:rgba(5,14,26,0.9);border-top:1px solid var(--border);min-height:48px; }
+    .caption-step { background:linear-gradient(135deg,var(--teal2),var(--teal));color:#000;font-weight:700;font-size:0.7rem;border-radius:6px;padding:3px 9px;white-space:nowrap;flex-shrink:0; }
+    .caption-text { font-size:0.82rem;color:#cbd5e1;line-height:1.4; }
+    #nav-strip { display:flex;justify-content:center;align-items:center;gap:12px;padding:8px 0;background:rgba(5,14,26,0.95);border-top:1px solid rgba(255,255,255,0.05); }
+    #nav-strip button { background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 20px;font-size:0.82rem;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .2s; }
+    #nav-strip button:hover { background:rgba(14,240,208,0.1);border-color:var(--teal);color:var(--teal); }
+    #nav-strip button:disabled { opacity:0.3;cursor:not-allowed; }
+    #nav-strip .dots { display:flex;gap:7px; }
+    .dot { width:7px;height:7px;border-radius:50%;background:var(--muted);cursor:pointer;transition:all .25s; }
+    .dot.active { background:var(--teal);transform:scale(1.4); }
+    .mock-ui { background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;overflow:hidden; }
+    .mock-header { background:rgba(255,255,255,0.04);border-bottom:1px solid var(--border);padding:8px 16px;font-size:0.75rem;color:var(--muted);display:flex;align-items:center;gap:7px; }
+    .mock-header .dot-r { width:9px;height:9px;border-radius:50%;background:#f43f5e; }
+    .mock-header .dot-y { width:9px;height:9px;border-radius:50%;background:#f59e0b; }
+    .mock-header .dot-g { width:9px;height:9px;border-radius:50%;background:#10b981; }
+    .mock-body { padding:16px; }
+    .bubble { padding:10px 14px;border-radius:13px;font-size:0.82rem;max-width:85%;line-height:1.5; }
+    .bubble.user { background:rgba(14,240,208,0.12);border:1px solid rgba(14,240,208,0.25);color:var(--teal);align-self:flex-end;border-bottom-right-radius:4px; }
+    .bubble.ai { background:rgba(255,255,255,0.05);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px; }
+    .bubble.safety { background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.35);color:#fca5a5;align-self:flex-start;border-bottom-left-radius:4px; }
+    .trace-card { margin-top:6px;padding:8px 12px;background:rgba(14,240,208,0.05);border:1px solid rgba(14,240,208,0.15);border-radius:8px;font-size:0.69rem;font-family:'JetBrains Mono',monospace;color:#94a3b8;line-height:1.65; }
+    .trace-card .ag { color:var(--teal);font-weight:600; }
+    .hm-cell { width:15px;height:15px;border-radius:3px; }
+    .hm0{background:rgba(255,255,255,0.06);}.hm1{background:rgba(16,185,129,0.25);}.hm2{background:rgba(16,185,129,0.55);}.hm3{background:rgba(16,185,129,0.85);}.hmx{background:rgba(244,63,94,0.4);}
+    .tl-item { display:flex;gap:14px;align-items:flex-start; }
+    .tl-left { display:flex;flex-direction:column;align-items:center;width:24px;flex-shrink:0; }
+    .tl-dot { width:13px;height:13px;border-radius:50%;border:2px solid var(--teal);background:rgba(14,240,208,0.2);flex-shrink:0; }
+    .tl-dot.r { border-color:var(--red);background:rgba(244,63,94,0.2); }
+    .tl-line { flex:1;width:2px;background:var(--border);min-height:24px; }
+    .tl-content { padding-bottom:14px; }
+    .tl-agent { font-size:0.7rem;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.06em; }
+    .tl-agent.r { color:var(--red); }
+    .tl-tool { font-size:0.8rem;color:var(--text);margin:2px 0; }
+    .tl-collab { font-size:0.69rem;color:var(--muted);font-style:italic; }
+    .badge { display:inline-block;padding:2px 8px;border-radius:999px;font-size:0.66rem;font-weight:700; }
+    .badge.g { background:rgba(16,185,129,0.2);color:#6ee7b7; }
+    .badge.r { background:rgba(244,63,94,0.2);color:#fca5a5; }
+  </style>
+</head>
+<body>
+<div id="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="13" stroke="#0ef0d0" stroke-width="1.5"/><path d="M14 7v7l5 3" stroke="#0ef0d0" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="2" fill="#0ef0d0"/></svg>
+    MediGuardian AI &mdash; Demo
+  </div>
+  <div class="controls">
+    <span id="slide-counter">1 / 8</span>
+    <button id="btn-auto" class="active">⏸ Auto-Play</button>
+    <button id="btn-fs">⛶ Fullscreen</button>
+  </div>
+</div>
+<div id="progress-track"><div id="progress-fill" style="width:0%"></div></div>
+
+<div id="stage">
+
+<!-- SLIDE 0: TITLE -->
+<div class="slide active"
+     data-caption-step="Intro"
+     data-caption="MediGuardian AI — an intelligent multi-agent medication management system powered by Google ADK and Gemini 2.5 Flash. This demo walks through all core features in 3 minutes.">
+  <div style="background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(14,240,208,0.07) 0%,transparent 70%);position:absolute;inset:0;"></div>
+  <div style="position:relative;text-align:center;max-width:760px;">
+    <div style="font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,#fff 0%,var(--teal) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-bottom:10px;">MediGuardian AI</div>
+    <div style="font-size:1rem;color:var(--muted);margin-bottom:28px;">Intelligent Multi-Agent Medication Management · Google ADK + Gemini 2.5 Flash</div>
+    <div style="display:flex;flex-wrap:wrap;gap:9px;justify-content:center;">
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">🤖 Multi-Agent AI</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">💊 Medication CRUD</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">📊 Adherence Analytics</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">🛡 Safety Guardrails</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">👁 OCR Vision</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">🧠 Semantic Memory</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">🆓 Offline Mode</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">📄 PDF Reports</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">🔊 Voice TTS</span>
+      <span style="padding:6px 14px;border-radius:999px;font-size:0.75rem;font-weight:500;border:1px solid var(--border);background:var(--card);color:var(--teal);">👨‍👩‍👧 Family Mode</span>
+    </div>
+    <div style="margin-top:28px;padding:12px 20px;background:rgba(14,240,208,0.06);border:1px solid var(--border);border-radius:10px;font-size:0.78rem;color:var(--muted);">
+      Press <kbd style="background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:4px;">→</kbd> or <kbd style="background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:4px;">Space</kbd> to advance &nbsp;·&nbsp; <kbd style="background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:4px;">F</kbd> fullscreen &nbsp;·&nbsp; <kbd style="background:rgba(255,255,255,0.1);padding:2px 7px;border-radius:4px;">P</kbd> pause auto-play
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 1: DASHBOARD -->
+<div class="slide"
+     data-caption-step="Step 1 · 0:00–0:30"
+     data-caption="The dashboard displays live adherence stats, a 30-day color-coded heatmap calendar, today's scheduled doses with their status, and the AI chat panel — all fetched in real-time from the FastAPI backend.">
+  <div class="slide-tag">Dashboard Overview</div>
+  <div class="slide-title">Live Medication Dashboard</div>
+  <div class="slide-subtitle">http://localhost:5173 &nbsp;·&nbsp; FastAPI backend on port 8000</div>
+  <div style="display:flex;gap:14px;width:100%;max-width:920px;flex:1;">
+    <div style="flex:1.4;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;padding:14px;border-radius:11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="font-size:1.7rem;font-weight:800;color:var(--teal);">3</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Medications</div></div>
+        <div style="flex:1;padding:14px;border-radius:11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="font-size:1.7rem;font-weight:800;color:#10b981;">85%</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Adherence</div></div>
+        <div style="flex:1;padding:14px;border-radius:11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:3px;"><div style="font-size:1.7rem;font-weight:800;color:#f59e0b;">2</div><div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">Due Today</div></div>
+      </div>
+      <div class="mock-ui" style="flex:1;">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;30-Day Adherence Heatmap</div>
+        <div class="mock-body">
+          <div style="display:flex;flex-wrap:wrap;gap:3px;">
+            <div class="hm-cell hm3"></div><div class="hm-cell hm3"></div><div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hmx"></div><div class="hm-cell hm2"></div><div class="hm-cell hm3"></div>
+            <div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div><div class="hm-cell hm1"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div><div class="hm-cell hmx"></div>
+            <div class="hm-cell hm3"></div><div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div><div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div>
+            <div class="hm-cell hmx"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div><div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hmx"></div><div class="hm-cell hm1"></div>
+            <div class="hm-cell hm2"></div><div class="hm-cell hm3"></div><div class="hm-cell hm1"></div><div class="hm-cell hm3"></div><div class="hm-cell hm3"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:9px;font-size:0.67rem;color:var(--muted);align-items:center;">
+            <div class="hm-cell hm0" style="width:11px;height:11px;flex-shrink:0;"></div>None
+            <div class="hm-cell hm1" style="width:11px;height:11px;flex-shrink:0;margin-left:6px;"></div>Low
+            <div class="hm-cell hm3" style="width:11px;height:11px;flex-shrink:0;margin-left:6px;"></div>Full
+            <div class="hm-cell hmx" style="width:11px;height:11px;flex-shrink:0;margin-left:6px;"></div>Missed
+          </div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:5px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:7px;font-size:0.74rem;"><span>08:00 · Aspirin 100mg</span><span style="color:#10b981;font-size:0.66rem;font-weight:700;">TAKEN</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(14,240,208,0.04);border:1px solid var(--border);border-radius:7px;font-size:0.74rem;"><span>12:00 · Metformin 500mg</span><span style="color:var(--amber);font-size:0.66rem;font-weight:700;">PENDING</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(14,240,208,0.04);border:1px solid var(--border);border-radius:7px;font-size:0.74rem;"><span>20:00 · Vitamin D 1000IU</span><span style="color:var(--amber);font-size:0.66rem;font-weight:700;">PENDING</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mock-ui" style="flex:1;display:flex;flex-direction:column;">
+      <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;AI Concierge Chat</div>
+      <div class="mock-body" style="flex:1;display:flex;flex-direction:column;gap:9px;font-size:0.76rem;">
+        <div class="bubble ai">Hi! I'm MediGuardian 🏥<br>How can I help you today?</div>
+        <div class="bubble user">What medications am I taking?</div>
+        <div class="bubble ai">You have 3 active medications:<br>• Aspirin 100mg — 08:00<br>• Metformin 500mg — 12:00<br>• Vitamin D 1000IU — 20:00</div>
+        <div style="display:flex;gap:6px;margin-top:auto;">
+          <input style="flex:1;padding:7px 11px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.73rem;outline:none;" placeholder="Type a message…" readonly/>
+          <div style="width:30px;height:30px;background:linear-gradient(135deg,var(--teal2),var(--teal));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;cursor:pointer;">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: REGISTER MED -->
+<div class="slide"
+     data-caption-step="Step 2 · 0:30–1:00"
+     data-caption="Typing 'Register Vitamin D 1000IU at 8am' triggers the MedicationAgent to save the record, then auto-delegates to ReminderAgent to generate 7-day reminder schedules — the full collaboration trace is returned in the response.">
+  <div class="slide-tag">Medication Registration · Agent Collaboration</div>
+  <div class="slide-title">Multi-Agent Medication Registration</div>
+  <div class="slide-subtitle">MedicationAgent → ReminderAgent collaboration with visible traces</div>
+  <div style="display:flex;gap:16px;width:100%;max-width:920px;flex:1;align-items:flex-start;">
+    <div style="flex:1.2;display:flex;flex-direction:column;gap:10px;">
+      <div class="bubble user">Register Vitamin D 1000IU at 8am</div>
+      <div class="bubble ai">
+        ✅ <strong>Registered Vitamin D (1000IU)</strong> at 08:00.<br>
+        Reminders scheduled for the next 7 days.
+        <div class="trace-card">
+          <span class="ag">MedicationAgent</span> → register_medication<br>
+          &nbsp;&nbsp;↳ consults <span class="ag">ReminderAgent</span> → generate_reminder_schedules<br>
+          &nbsp;&nbsp;↳ result: "7 reminder entries created"
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Agent Collaboration Flow</div>
+        <div class="mock-body">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="padding:7px 14px;border-radius:8px;background:rgba(14,240,208,0.1);border:1px solid var(--teal);color:var(--teal);font-size:0.72rem;font-weight:700;">Coordinator Agent</div>
+            <div style="color:var(--muted);font-size:0.8rem;">↓ routes to</div>
+            <div style="padding:7px 14px;border-radius:8px;background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.3);color:#7dd3fc;font-size:0.72rem;font-weight:600;">MedicationAgent</div>
+            <div style="color:var(--muted);font-size:0.8rem;">↓ delegates</div>
+            <div style="padding:7px 14px;border-radius:8px;background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.3);color:#7dd3fc;font-size:0.72rem;font-weight:600;">ReminderAgent</div>
+            <div style="color:var(--muted);font-size:0.8rem;">↓ persists to</div>
+            <div style="padding:7px 14px;border-radius:8px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;font-size:0.72rem;font-weight:600;">SQLite Database</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px;background:rgba(14,240,208,0.04);border:1px solid var(--border);border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:0.67rem;color:#94a3b8;line-height:1.6;">
+        <div style="color:var(--teal);margin-bottom:4px;font-size:0.7rem;">POST /api/v1/users/1/medications</div>
+        {<br>&nbsp;"name": "Vitamin D",<br>&nbsp;"dosage": "1000IU",<br>&nbsp;"time_of_day": "08:00"<br>}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: NEXT DOSE -->
+<div class="slide"
+     data-caption-step="Step 3 · 1:00–1:30"
+     data-caption="Before generating the reminder schedule, ReminderAgent explicitly consults MedicationAgent to confirm the active drug list — a traceable consult-then-act collaboration that is logged to AgentLog.">
+  <div class="slide-tag">Smart Reminders · Cross-Agent Consultation</div>
+  <div class="slide-title">When Is My Next Dose?</div>
+  <div class="slide-subtitle">ReminderAgent consults MedicationAgent before scheduling</div>
+  <div style="display:flex;gap:16px;width:100%;max-width:920px;flex:1;align-items:flex-start;">
+    <div style="flex:1.2;display:flex;flex-direction:column;gap:10px;">
+      <div class="bubble user">When is my next dose?</div>
+      <div class="bubble ai">
+        Your next dose is <strong>Vitamin D (1000IU)</strong> at <strong>08:00</strong>.<br>
+        You have 2 more doses scheduled today.
+        <div class="trace-card">
+          <span class="ag">ReminderAgent</span> → <span class="ag">MedicationAgent</span>: list_medications<br>
+          &nbsp;&nbsp;reason: "Confirm active drugs before scheduling"<br>
+          &nbsp;&nbsp;result: "3 medications confirmed"<br>
+          <span class="ag">ReminderAgent</span> → generate_reminder_schedules
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Today's Reminder Timeline</div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:9px;background:rgba(14,240,208,0.08);border:1px solid rgba(14,240,208,0.25);border-radius:9px;">
+            <span style="font-size:1rem;">🔔</span>
+            <div><div style="font-size:0.78rem;font-weight:700;color:var(--teal);">08:00 · NEXT</div><div style="font-size:0.72rem;">Vitamin D 1000IU</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;">
+            <span style="font-size:1rem;">💊</span>
+            <div><div style="font-size:0.78rem;font-weight:600;color:var(--muted);">12:00</div><div style="font-size:0.72rem;">Metformin 500mg</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;">
+            <span style="font-size:1rem;">💊</span>
+            <div><div style="font-size:0.78rem;font-weight:600;color:var(--muted);">20:00</div><div style="font-size:0.72rem;">Aspirin 100mg</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: SAFETY -->
+<div class="slide"
+     data-caption-step="Step 4 · 1:30–2:00"
+     data-caption="Safety guardrails fire BEFORE any LLM or tool call. Pattern-based classifiers instantly return category-specific educational refusals with zero API cost and under 5ms latency.">
+  <div class="slide-tag">Safety Guardrails · Pre-LLM Block</div>
+  <div class="slide-title">🛡 Clinical Safety Enforcement</div>
+  <div class="slide-subtitle">Pattern-based refusal — fires before any LLM or tool call, $0 cost</div>
+  <div style="display:flex;gap:16px;width:100%;max-width:920px;flex:1;align-items:flex-start;">
+    <div style="flex:1.2;display:flex;flex-direction:column;gap:9px;">
+      <div class="bubble user" style="background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.3);color:#fca5a5;">Can you diagnose my chest pain?</div>
+      <div class="bubble safety">
+        🛡️ <strong>Safety Guard — Emergency</strong><br><br>
+        This sounds like a medical emergency. Please call emergency services immediately (911). MediGuardian is not an emergency service.
+        <div class="trace-card" style="border-color:rgba(244,63,94,0.2);">
+          <span style="color:#f87171;">SafetyAgent</span> → blocked_request<br>
+          &nbsp;&nbsp;category: <span style="color:#f87171;">emergency</span> · LLM calls: 0 · cost: $0 · &lt;5ms
+        </div>
+      </div>
+      <div class="bubble user" style="background:rgba(244,63,94,0.1);border-color:rgba(244,63,94,0.3);color:#fca5a5;">Should I double my aspirin dose?</div>
+      <div class="bubble safety">
+        🛡️ <strong>Safety Guard — Dosage</strong><br><br>
+        I cannot recommend dosage changes. Please speak with your doctor.
+        <div class="trace-card" style="border-color:rgba(244,63,94,0.2);">
+          <span style="color:#f87171;">SafetyAgent</span> → blocked_request · category: <span style="color:#f87171;">dosage</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;">
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Safety Categories</div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:7px;font-size:0.75rem;">
+          <div style="padding:7px 11px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:7px;"><span style="color:#f87171;font-weight:700;">emergency</span> — Chest pain, overdose, crisis</div>
+          <div style="padding:7px 11px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:7px;"><span style="color:#f87171;font-weight:700;">diagnosis</span> — "What disease do I have?"</div>
+          <div style="padding:7px 11px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:7px;"><span style="color:#f87171;font-weight:700;">dosage</span> — "Increase / double my dose"</div>
+          <div style="padding:7px 11px;background:rgba(244,63,94,0.08);border:1px solid rgba(244,63,94,0.25);border-radius:7px;"><span style="color:#f87171;font-weight:700;">prescription</span> — "Prescribe me antibiotics"</div>
+          <div style="margin-top:6px;padding:9px 11px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:7px;font-size:0.7rem;color:#6ee7b7;">
+            ✅ Safety refusal rate: <strong>100%</strong> (10/10 test cases)<br>
+            ✅ Zero LLM calls on blocked requests<br>
+            ✅ Category-specific educational responses
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: OCR -->
+<div class="slide"
+     data-caption-step="Step 5 · 2:00–2:20"
+     data-caption="Upload a photo of a prescription and Gemini Vision extracts drug name, dosage, frequency, and instructions into structured JSON — enabling zero-manual-entry medication onboarding.">
+  <div class="slide-tag">Gemini Vision OCR</div>
+  <div class="slide-title">Prescription OCR Upload</div>
+  <div class="slide-subtitle">Photo → Gemini Vision → Structured JSON → Auto-Register</div>
+  <div style="display:flex;gap:16px;width:100%;max-width:920px;flex:1;align-items:flex-start;">
+    <div class="mock-ui" style="flex:1;">
+      <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Upload Prescription Image</div>
+      <div class="mock-body" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="height:110px;border:2px dashed rgba(14,240,208,0.3);border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--muted);font-size:0.76rem;">
+          <div style="font-size:1.8rem;">📄</div>
+          <div>prescription.jpg · Scanning…</div>
+          <div style="width:55%;height:3px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;"><div style="width:80%;height:100%;background:linear-gradient(90deg,var(--teal2),var(--teal));border-radius:4px;"></div></div>
+        </div>
+        <div style="padding:10px;background:rgba(14,240,208,0.05);border:1px solid var(--border);border-radius:9px;font-size:0.74rem;">
+          <div style="color:var(--teal);font-weight:700;margin-bottom:7px;">🔍 Gemini Vision extracted:</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Drug Name</span><strong>Lisinopril</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Dosage</span><strong>10mg</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Frequency</span><strong>Once daily</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);">Time</span><strong>Morning</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button style="flex:1;padding:9px;background:linear-gradient(135deg,var(--teal2),var(--teal));color:#000;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-size:0.75rem;">✅ Confirm & Register</button>
+          <button style="padding:9px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;cursor:pointer;font-size:0.75rem;">✏️ Edit</button>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;POST /api/v1/ocr/prescription</div>
+        <div class="mock-body" style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#94a3b8;line-height:1.65;">
+          {<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"drug_name"</span>: "Lisinopril",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"dosage"</span>: "10mg",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"frequency"</span>: "once_daily",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"time_of_day"</span>: "08:00",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"instructions"</span>: "Take with water"<br>
+          }
+        </div>
+      </div>
+      <div style="padding:11px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:9px;font-size:0.72rem;color:#6ee7b7;line-height:1.6;">
+        ✅ Zero manual data entry<br>
+        ✅ Powered by Gemini Vision API<br>
+        ✅ Auto-schedules reminders after confirmation<br>
+        ✅ Works with photo upload or camera snap
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: TRACES -->
+<div class="slide"
+     data-caption-step="Step 6 · 2:20–2:40"
+     data-caption="GET /api/v1/traces/1 returns the full agent reasoning log. Each entry shows which specialist ran, which tool was called, any cross-agent consultation, and whether offline NLU was used.">
+  <div class="slide-tag">Agent Reasoning Traces</div>
+  <div class="slide-title">Full Agent Collaboration Log</div>
+  <div class="slide-subtitle">GET /api/v1/traces/1 &nbsp;·&nbsp; Stored in AgentLog table</div>
+  <div style="display:flex;gap:16px;width:100%;max-width:920px;flex:1;align-items:flex-start;">
+    <div style="flex:1;display:flex;flex-direction:column;gap:0;">
+      <div class="tl-item"><div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-content"><div class="tl-agent">MedicationAgent</div><div class="tl-tool">register_medication → Vitamin D 1000IU at 08:00</div><div class="tl-collab">↳ delegates to ReminderAgent: generate_reminder_schedules (7 entries)</div></div></div>
+      <div class="tl-item"><div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-content"><div class="tl-agent">ReminderAgent</div><div class="tl-tool">generate_reminder_schedules → 3 medications</div><div class="tl-collab">↳ consulted MedicationAgent: list_medications first</div></div></div>
+      <div class="tl-item"><div class="tl-left"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-content"><div class="tl-agent">AnalyticsAgent</div><div class="tl-tool">log_medication_taken → Aspirin 100mg (taken)</div><div class="tl-collab">↳ consulted MedicationAgent to resolve drug identity</div></div></div>
+      <div class="tl-item"><div class="tl-left"><div class="tl-dot r"></div><div class="tl-line"></div></div><div class="tl-content"><div class="tl-agent r">SafetyAgent</div><div class="tl-tool">blocked_request → "diagnose my chest pain"</div><div class="tl-collab">category: emergency · LLM calls: 0 · $0 cost</div></div></div>
+      <div class="tl-item"><div class="tl-left"><div class="tl-dot"></div></div><div class="tl-content"><div class="tl-agent">CaregiverAgent</div><div class="tl-tool">send_alert → Jane Doe (3 missed doses)</div><div class="tl-collab">↳ triggered by AnalyticsAgent after 3rd consecutive miss</div></div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Raw JSON Trace Response</div>
+        <div class="mock-body" style="font-family:'JetBrains Mono',monospace;font-size:0.64rem;color:#94a3b8;line-height:1.65;">
+          {<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"agent"</span>: "ReminderAgent",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"tool"</span>: "generate_schedules",<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"collaboration"</span>: [{<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--teal);">"from"</span>: "ReminderAgent",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--teal);">"to"</span>: "MedicationAgent",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--teal);">"action"</span>: "list_medications",<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--teal);">"result"</span>: "3 meds confirmed"<br>
+          &nbsp;&nbsp;}],<br>
+          &nbsp;&nbsp;<span style="color:var(--teal);">"offline"</span>: false<br>
+          }
+        </div>
+      </div>
+      <div class="mock-ui">
+        <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Evaluation Metrics</div>
+        <div class="mock-body" style="font-size:0.73rem;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--muted);">Intent routing accuracy</span><span class="badge g">95%+</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--muted);">Safety refusal rate</span><span class="badge g">100%</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--muted);">Offline fallback coverage</span><span class="badge g">90%+</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:var(--muted);">Tool execution success</span><span class="badge g">98%</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span style="color:var(--muted);">Chat offline latency</span><span class="badge g">&lt;200ms</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: EXPORT + OFFLINE + FAMILY -->
+<div class="slide"
+     data-caption-step="Step 7 · 2:40–3:00"
+     data-caption="PDF and CSV reports work independently of AI — REST endpoints are always available. The offline NLU keeps chat working at $0 cost. Family mode lets caregivers monitor multiple patients and receive missed-dose alerts.">
+  <div class="slide-tag">Reports · Offline Mode · Family</div>
+  <div class="slide-title">Export, Offline Resilience & Family Mode</div>
+  <div class="slide-subtitle">REST always available · Zero-cost offline chat · Multi-patient caregiver mode</div>
+  <div style="display:flex;gap:12px;width:100%;max-width:920px;flex:1;">
+    <div class="mock-ui" style="flex:1;">
+      <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Adherence Reports</div>
+      <div class="mock-body" style="display:flex;flex-direction:column;gap:9px;">
+        <div style="padding:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;">
+          <div style="font-weight:700;margin-bottom:7px;font-size:0.8rem;">June 2026 Adherence</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <div style="flex:1;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:#10b981;">85.7%</div><div style="font-size:0.62rem;color:var(--muted);">Rate</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:var(--teal);">36</div><div style="font-size:0.62rem;color:var(--muted);">Taken</div></div>
+            <div style="flex:1;text-align:center;"><div style="font-size:1.2rem;font-weight:800;color:var(--red);">4</div><div style="font-size:0.62rem;color:var(--muted);">Missed</div></div>
+          </div>
+          <div style="display:flex;gap:7px;">
+            <button style="flex:1;padding:7px;background:linear-gradient(135deg,var(--teal2),var(--teal));color:#000;font-weight:700;border:none;border-radius:7px;cursor:pointer;font-size:0.7rem;">📄 Download PDF</button>
+            <button style="flex:1;padding:7px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:7px;cursor:pointer;font-size:0.7rem;">📊 Export CSV</button>
+          </div>
+        </div>
+        <div style="font-size:0.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.65;">
+          <span style="color:var(--teal);">GET</span> /api/v1/users/1/reports/pdf<br>
+          <span style="color:var(--teal);">GET</span> /api/v1/users/1/reports/csv<br>
+          <span style="color:var(--teal);">GET</span> /api/v1/dashboard/1<br>
+          <span style="color:var(--teal);">GET</span> /api/v1/memory/1<br>
+          <span style="color:var(--teal);">GET</span> /api/v1/traces/1
+        </div>
+      </div>
+    </div>
+    <div class="mock-ui" style="flex:1;">
+      <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Offline / Free Mode</div>
+      <div class="mock-body" style="display:flex;flex-direction:column;gap:8px;font-size:0.75rem;">
+        <div style="padding:7px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:7px;color:#fde68a;font-size:0.69rem;">⚠️ Gemini 429 — activating offline NLU…</div>
+        <div class="bubble ai" style="font-size:0.72rem;">
+          <span style="color:var(--amber);font-size:0.65rem;">[Offline mode — Gemini quota reached]</span><br>
+          Your next dose is Metformin (500mg) at 12:00.
+        </div>
+        <div style="padding:8px;background:rgba(14,240,208,0.04);border:1px solid var(--border);border-radius:8px;font-size:0.65rem;color:#94a3b8;font-family:'JetBrains Mono',monospace;line-height:1.5;">
+          "agent": "ReminderAgent",<br>
+          "offline": true,<br>
+          "latency": "87ms",<br>
+          "api_cost": "$0.00"
+        </div>
+        <div style="padding:7px 10px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:7px;font-size:0.69rem;color:#6ee7b7;">
+          ✅ Meds, reminders, reports, OCR<br>&nbsp;&nbsp;all work regardless of chat mode
+        </div>
+      </div>
+    </div>
+    <div class="mock-ui" style="flex:1;">
+      <div class="mock-header"><div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>&nbsp;Family & Caregiver Mode</div>
+      <div class="mock-body" style="display:flex;flex-direction:column;gap:8px;font-size:0.75rem;">
+        <div style="display:flex;align-items:center;gap:9px;padding:8px;background:rgba(14,240,208,0.05);border:1px solid var(--border);border-radius:8px;">
+          <span style="font-size:1.1rem;">👩‍⚕️</span>
+          <div><div style="font-weight:700;font-size:0.78rem;">Jane Doe</div><div style="color:var(--muted);font-size:0.67rem;">Caregiver · 2 patients</div></div>
+        </div>
+        <div style="padding:8px;background:rgba(244,63,94,0.07);border:1px solid rgba(244,63,94,0.2);border-radius:8px;">
+          <div style="color:#fca5a5;font-weight:700;font-size:0.69rem;">🔔 Alert Sent</div>
+          <div style="color:var(--muted);font-size:0.67rem;margin-top:2px;">Patient missed Metformin 3× in a row</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:8px;background:rgba(14,240,208,0.05);border:1px solid var(--border);border-radius:8px;">
+          <span>👤</span><div><div style="font-weight:700;font-size:0.75rem;">Patient #1</div><div style="color:var(--muted);font-size:0.65rem;">85% adherence · 3 meds</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:8px;background:rgba(14,240,208,0.05);border:1px solid var(--border);border-radius:8px;">
+          <span>👤</span><div><div style="font-weight:700;font-size:0.75rem;">Patient #2</div><div style="color:var(--muted);font-size:0.65rem;">92% adherence · 1 med</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /stage -->
+
+<div id="caption-bar">
+  <div class="caption-step" id="caption-step">Intro</div>
+  <div class="caption-text" id="caption-text">MediGuardian AI — intelligent multi-agent medication management powered by Google ADK + Gemini 2.5 Flash.</div>
+</div>
+
+<div id="nav-strip">
+  <button id="btn-prev">← Prev</button>
+  <div class="dots" id="dots"></div>
+  <button id="btn-next">Next →</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsEl = document.getElementById('dots');
+const progressFill = document.getElementById('progress-fill');
+const counter = document.getElementById('slide-counter');
+const captionStep = document.getElementById('caption-step');
+const captionText = document.getElementById('caption-text');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnAuto = document.getElementById('btn-auto');
+const btnFs = document.getElementById('btn-fs');
+let current = 0, autoPlay = true, timer = null;
+const DURATION = 7000;
+
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(d);
+});
+
+function updateUI(idx) {
+  slides.forEach((s,i) => { s.classList.remove('active','exit'); if(i===idx) s.classList.add('active'); else if(i<idx) s.classList.add('exit'); });
+  document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+  progressFill.style.width = (idx/(slides.length-1)*100)+'%';
+  counter.textContent = (idx+1)+' / '+slides.length;
+  captionStep.textContent = slides[idx].dataset.captionStep || '';
+  captionText.textContent = slides[idx].dataset.caption || '';
+  btnPrev.disabled = idx===0;
+  btnNext.disabled = idx===slides.length-1;
+  current = idx;
+}
+function goTo(idx) { if(idx<0||idx>=slides.length) return; updateUI(idx); resetTimer(); }
+function next() { if(current<slides.length-1) goTo(current+1); else if(autoPlay) goTo(0); }
+function resetTimer() { clearInterval(timer); if(autoPlay) timer=setInterval(next,DURATION); }
+
+btnPrev.addEventListener('click', () => goTo(current-1));
+btnNext.addEventListener('click', () => goTo(current+1));
+btnAuto.addEventListener('click', () => { autoPlay=!autoPlay; btnAuto.textContent=autoPlay?'⏸ Auto-Play':'▶ Auto-Play'; btnAuto.classList.toggle('active',autoPlay); resetTimer(); });
+btnFs.addEventListener('click', () => { if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+document.addEventListener('keydown', e => {
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goTo(current+1);}
+  if(e.key==='ArrowLeft') goTo(current-1);
+  if(e.key==='f'||e.key==='F') btnFs.click();
+  if(e.key==='p'||e.key==='P') btnAuto.click();
+});
+document.getElementById('stage').addEventListener('click', e => { if(!e.target.closest('button')&&!e.target.closest('input')) goTo(current+1); });
+updateUI(0);
+resetTimer();
+</script>
+</body>
+</html>
